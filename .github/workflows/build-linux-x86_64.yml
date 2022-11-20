@@ -30,14 +30,17 @@ jobs:
 
       - name: "🖼️ Setup scene..."
         shell: bash
-        run: mkdir -p build
+        run: |
+          mkdir -p build
+          sudo apt-get update
+          sudo apt-get install ninja-build
 
       - name: "🔧 CMake: Configure"
         shell: bash
         working-directory: build
         run: |
           cmake \
-            -D"CMAKE_BUILD_TYPE"="RelWithDebInfo" \
+            -D"CMAKE_BUILD_TYPE"="Release" \
             -G Ninja \
             ..
 

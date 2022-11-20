@@ -43,7 +43,7 @@ jobs:
         working-directory: build
         run: |
           cmake \
-            -D"CMAKE_BUILD_TYPE"="RelWithDebInfo" \
+            -D"CMAKE_BUILD_TYPE"="Release" \
             -A "${{ matrix.win_ver }}" \
             ..
 
