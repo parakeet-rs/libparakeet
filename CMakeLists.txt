@@ -92,10 +92,16 @@ if(PARAKEET_CRYPTO_BUILD_TESTING)
 
   file(GLOB_RECURSE TESTS_SOURCE src/*.test.cc src/*.test.hh)
   add_executable(parakeet_crypto_test ${TESTS_SOURCE})
-  target_link_libraries(parakeet_crypto_test GTest::gmock GTest::gtest GTest::gmock_main GTest::gtest_main)
-  target_link_libraries(parakeet_crypto_test ${PROJECT_NAME})
   target_include_directories(parakeet_crypto_test PRIVATE src)
   target_compile_features(parakeet_crypto_test PRIVATE cxx_std_20)
+  target_link_libraries(parakeet_crypto_test 
+    cryptopp::cryptopp
+    GTest::gmock
+    GTest::gtest
+    GTest::gmock_main
+    GTest::gtest_main
+    ${PROJECT_NAME}
+  )
 
   include(GoogleTest)
   gtest_discover_tests(parakeet_crypto_test)
