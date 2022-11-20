@@ -1,0 +1,100 @@
+name: Build (Windows)
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+  pull_request:
+  schedule:
+    # Build once every fortnight
+    - cron: "10 4 1,15 * *"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: "Build Windows Binary"
+    strategy:
+      matrix:
+        win_ver: ["win32", "win64"]
+        include:
+          - vs_ver: "2022"
+
+    runs-on: windows-2022
+    env:
+      CMAKE_BUILD_PARALLEL_LEVEL: "3"
+      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/.vcpkg-bc
+
+    steps:
+      - name: "⏳ Clone repo..."
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: "🖼️ Setup scene..."
+        shell: bash
+        run: mkdir -p build
+
+      - name: "🔧 CMake: Configure"
+        shell: bash
+        working-directory: build
+        run: |
+          cmake \
+            -D"CMAKE_BUILD_TYPE"="RelWithDebInfo" \
+            -A "${{ matrix.win_ver }}" \
+            ..
+
+      - name: "🛠️ CMake: Build"
+        working-directory: build
+        run: cmake --build .
+
+      - name: "💣 Test um-crypto ..."
+        working-directory: build
+        run: ctest --output-on-failure
+
+      - name: "📦 Package static libs..."
+        shell: bash
+        run: |
+          DIST_SOURCE="dist/libparakeet-${{ matrix.win_ver }}/"
+          mkdir -p "${DIST_SOURCE}/libparakeet"
+          cp -R build/{lib,bin} "${DIST_SOURCE}/libparakeet"
+          cp -R include "${DIST_SOURCE}/libparakeet"
+          cp README.md CHANGELOG.md LICENSE.txt "${DIST_SOURCE}"
+
+      - name: "🚀 Upload artifact"
+        uses: actions/upload-artifact@v3
+        with:
+          name: "libparakeet-${{ matrix.win_ver }}"
+          path: dist/
+
+  release:
+    needs: build
+    runs-on: ubuntu-22.04
+    name: "Release Windows Binary"
+    strategy:
+      matrix:
+        win_ver: ["win32", "win64"]
+
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: "libparakeet-${{ matrix.win_ver }}"
+          path: dist/
+
+      - name: "🗜️ Packaging"
+        working-directory: dist
+        run: zip -r9 "../libparakeet-${{ matrix.win_ver }}.zip" .
+
+      - name: 📝 Draft Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          body: "<to be filled>"
+          draft: true
+          token: ${{ secrets.CUSTOM_GITHUB_TOKEN }}
+          files: "*.zip"

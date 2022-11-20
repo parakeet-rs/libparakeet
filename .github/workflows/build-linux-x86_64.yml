@@ -1,0 +1,79 @@
+name: Build (Linux x86_64)
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+  pull_request:
+  schedule:
+    # Build once every fortnight
+    - cron: "10 4 1,15 * *"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: "Build Linux Binary"
+
+    runs-on: ubuntu-22.04
+    env:
+      CXX: g++-11
+
+    steps:
+      - name: "⏳ Clone repo..."
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: "🖼️ Setup scene..."
+        shell: bash
+        run: mkdir -p build
+
+      - name: "🔧 CMake: Configure"
+        shell: bash
+        working-directory: build
+        run: |
+          cmake \
+            -D"CMAKE_BUILD_TYPE"="RelWithDebInfo" \
+            -G Ninja \
+            ..
+
+      - name: "🛠️ CMake: Build"
+        working-directory: build
+        run: cmake --build .
+
+      - name: "💣 Test um-crypto ..."
+        working-directory: build
+        run: ctest --output-on-failure
+
+      - name: "📦 Package static libs..."
+        shell: bash
+        run: |
+          DIST_SOURCE="libparakeet-amd64/"
+          mkdir -p "${DIST_SOURCE}/libparakeet"
+          cp -R build/{lib,bin} "${DIST_SOURCE}/libparakeet"
+          cp -R include "${DIST_SOURCE}/libparakeet"
+          cp README.md CHANGELOG.md LICENSE.txt "${DIST_SOURCE}"
+
+      - name: "🗜️ Packaging"
+        run: tar zcvf "libparakeet-linux-amd64.tar.gz" libparakeet-amd64
+
+      - name: "🚀 Upload artifact"
+        uses: actions/upload-artifact@v3
+        with:
+          name: libparakeet-amd64
+          path: libparakeet-amd64/
+
+      - name: 📝 Draft Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          body: "<to be filled>"
+          draft: true
+          token: ${{ secrets.CUSTOM_GITHUB_TOKEN }}
+          files: "*.tar.gz"
