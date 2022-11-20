@@ -56,8 +56,8 @@ jobs:
         shell: bash
         run: |
           DIST_SOURCE="libparakeet-amd64/"
-          mkdir -p "${DIST_SOURCE}/libparakeet"
-          cp -R build/{lib,bin} "${DIST_SOURCE}/libparakeet"
+          mkdir -p "${DIST_SOURCE}/libparakeet/lib"
+          cp -R build/*.a "${DIST_SOURCE}/libparakeet/lib"
           cp -R include "${DIST_SOURCE}/libparakeet"
           cp README.md CHANGELOG.md LICENSE.txt "${DIST_SOURCE}"
 
