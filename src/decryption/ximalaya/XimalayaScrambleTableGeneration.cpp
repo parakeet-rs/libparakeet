@@ -6,8 +6,8 @@
 namespace parakeet_crypto::decryption::ximalaya {
 
 std::vector<uint16_t> generate_ximalaya_scramble_table(double mul_init, double mul_step, size_t n) {
-  assert(mul_step >= 0.00 && mul_step <= 1.00);  // mul_step is out of range.
-  assert(mul_init >= 3.57 && mul_init <= 4.00);  // mul_init is out of range.
+  assert((mul_step >= 0.00 && mul_step <= 1.00, "mul_step is out of range."));
+  assert((mul_init >= 3.57 && mul_init <= 4.00, "mul_init is out of range."));
 
   std::vector<double> vec_data(n);
 
