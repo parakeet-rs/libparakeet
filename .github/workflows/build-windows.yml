@@ -22,6 +22,10 @@ jobs:
         win_ver: ["win32", "win64"]
         include:
           - vs_ver: "2022"
+          - win_ver: win32
+            vs_arch: "Win32"
+          - win_ver: win64
+            vs_arch: "x64"
 
     runs-on: windows-2022
     env:
@@ -42,10 +46,9 @@ jobs:
         shell: bash
         working-directory: build
         run: |
-          ARCH="${{ matrix.win_ver }}"
           cmake \
             -D"CMAKE_BUILD_TYPE"="Release" \
-            -A "${ARCH^}" \
+            -A "${{ matrix.vs_arch }}" \
             ..
 
       - name: "🛠️ CMake: Build"
