@@ -3,6 +3,7 @@
 #include "kugou/KugouFileLoader.h"
 #include "kuwo/KuwoFileLoader.h"
 #include "netease/NCMFileLoader.h"
+#include "tencent/EKeyProvider.h"
 #include "tencent/JooxFileLoader.h"
 #include "tencent/QMCv1Loader.h"
 #include "tencent/QMCv2Loader.h"
@@ -93,6 +94,12 @@ class DecryptionManager {
   virtual void SetConfig(config::DecryptionConfig& config) = 0;
 
   /**
+   * Use this method to inject EKeys.
+   * @return
+   */
+  virtual tencent::EKeyProvider& GetEKeyProvider() { return ekey_provider_; }
+
+  /**
    * @brief Get a list of detected decryptor.
    * Header will be supplied to the decryptor;
    *   when decrypting, feed decryptor with rest of the file.
@@ -156,6 +163,9 @@ class DecryptionManager {
   }
 
   static std::unique_ptr<DecryptionManager> Create();
+
+ private:
+  tencent::EKeyProvider ekey_provider_;
 };
 
 }  // namespace parakeet_crypto::decryption
