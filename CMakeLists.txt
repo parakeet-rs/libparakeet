@@ -16,6 +16,12 @@ CPMAddPackage(
     "CRYPTOPP_BUILD_TESTING OFF"
 )
 
+CPMAddPackage(
+  NAME utf8proc
+  GITHUB_REPOSITORY JuliaStrings/utf8proc
+  GIT_TAG v2.8.0
+)
+
 if (!MSVC)
 	link_libraries(m)
 
@@ -40,6 +46,8 @@ configure_file (
 file(GLOB_RECURSE SOURCES
   "src/*.h"
   "src/*.cpp"
+  "src/*.hpp"
+  "include/*.h"
   "${PROJECT_BINARY_DIR}/src/*.h"
   "${PROJECT_BINARY_DIR}/src/*.cpp"
 )
@@ -57,6 +65,7 @@ target_include_directories(parakeet_crypro
     "${PROJECT_BINARY_DIR}/src"
 )
 target_link_libraries(parakeet_crypro PRIVATE cryptopp::cryptopp)
+target_link_libraries(parakeet_crypro PRIVATE $<BUILD_INTERFACE:utf8proc>)
 target_compile_features(parakeet_crypro PRIVATE cxx_std_20)
 
 include(GNUInstallDirs)
@@ -96,8 +105,9 @@ if(PARAKEET_CRYPTO_BUILD_TESTING)
   add_executable(parakeet_crypto_test ${TESTS_SOURCE})
   target_include_directories(parakeet_crypto_test PRIVATE src)
   target_compile_features(parakeet_crypto_test PRIVATE cxx_std_20)
-  target_link_libraries(parakeet_crypto_test 
+  target_link_libraries(parakeet_crypto_test
     cryptopp::cryptopp
+    utf8proc
     GTest::gmock
     GTest::gtest
     GTest::gmock_main
