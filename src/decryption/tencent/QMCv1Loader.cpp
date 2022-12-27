@@ -2,8 +2,6 @@
 #include "parakeet-crypto/endian.h"
 #include "parakeet-crypto/utils/StringHelper.h"
 
-#include <cassert>
-
 namespace parakeet_crypto::decryption::tencent {
 
 // Private implementation

@@ -11,7 +11,7 @@ include(cmake/git-info.cmake)
 CPMAddPackage(
   NAME cryptopp-cmake
   GITHUB_REPOSITORY abdes/cryptopp-cmake
-  GIT_TAG CRYPTOPP_8_7_0
+  GIT_TAG CRYPTOPP_8_7_0_1
   OPTIONS
     "CRYPTOPP_BUILD_TESTING OFF"
 )
