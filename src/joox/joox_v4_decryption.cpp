@@ -8,6 +8,8 @@
 #include <cryptopp/pwdbased.h>
 #include <cryptopp/sha.h>
 
+#include <openssl/evp.h>
+
 #include <algorithm>
 #include <array>
 #include <cstddef>
@@ -24,20 +26,20 @@ class JooxDecryptionV4Transformer final : public ITransformer
 {
   private:
     using AES_ECB = CryptoPP::ECB_Mode<CryptoPP::AES>::Decryption;
-    static constexpr std::size_t kAESBlockSize = 0x10;
-    static constexpr std::size_t kPlainBlockSize = 0x100000;                   // 1MiB
-    static constexpr std::size_t kEncryptedBlockSize = kPlainBlockSize + 0x10; // padding (0x10, ...)
+    static constexpr std::size_t kAESBlockSizeBits = 128; // AES-128-ECB
+    static constexpr std::size_t kAESBlockSize = kAESBlockSizeBits / 16;
+    static constexpr std::size_t kPlainBlockSize = 0x100000;                            // 1MiB
+    static constexpr std::size_t kEncryptedBlockSize = kPlainBlockSize + kAESBlockSize; // padding (0x10, ...)
 
     std::array<uint8_t, CryptoPP::SHA1::DIGESTSIZE> key_{};
 
     inline void SetupKey(JooxConfig &config)
     {
         constexpr size_t kDeriveIteration = 1000;
-        CryptoPP::PKCS5_PBKDF2_HMAC<CryptoPP::SHA1> pbkdf{};
-        pbkdf.DeriveKey(
-            key_.data(), key_.size(), 0 /* unused */,
-            reinterpret_cast<const uint8_t *>(config.install_uuid.c_str()), // NOLINT(*-type-reinterpret-cast)
-            config.install_uuid.size(), config.salt.data(), config.salt.size(), kDeriveIteration, 0);
+        PKCS5_PBKDF2_HMAC_SHA1(config.install_uuid.c_str(), static_cast<int>(config.install_uuid.size()), //
+                               config.salt.data(), static_cast<int>(config.salt.size()),                  //
+                               kDeriveIteration,                                                          //
+                               static_cast<int>(key_.size()), key_.data());
     }
 
   public:

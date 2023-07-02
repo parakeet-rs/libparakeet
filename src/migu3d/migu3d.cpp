@@ -14,9 +14,8 @@
 #include <memory>
 #include <vector>
 
-#define CRYPTOPP_ENABLE_NAMESPACE_WEAK 1
-#include <cryptopp/hex.h>
-#include <cryptopp/md5.h>
+#include <openssl/crypto.h>
+#include <openssl/evp.h>
 
 namespace parakeet_crypto::transformer
 {
@@ -34,16 +33,13 @@ class Migu3DTransformer final : public ITransformer
     Migu3DTransformer() = default;
     Migu3DTransformer(const uint8_t *salt, const uint8_t *file_key)
     {
-        CryptoPP::Weak::MD5 hash;
-        std::array<uint8_t, utils::MD5_DIGEST_SIZE> digest{};
-        hash.Update(salt, kSaltSize);
-        hash.Update(file_key, kFileKeySize);
-        hash.Final(digest.data());
+        std::array<uint8_t, kSaltSize + kFileKeySize> input{};
+        std::copy_n(salt, kSaltSize, input.begin());
+        std::copy_n(file_key, kFileKeySize, input.begin() + kSaltSize);
+        auto digest = utils::md5(input.data(), input.size());
 
-        CryptoPP::HexEncoder encoder(nullptr, true, 0, "");
-        encoder.Put(digest.data(), digest.size());
-        encoder.MessageEnd();
-        encoder.Get(key_.data(), key_.size());
+        OPENSSL_buf2hexstr_ex(reinterpret_cast<char *>(key_.data()), key_.size(), // NOLINT(*-reinterpret-cast)
+                              nullptr, digest.data(), digest.size(), 0);
 
         if (logger::DEBUG_Enabled)
         {

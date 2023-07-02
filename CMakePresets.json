@@ -36,6 +36,24 @@
       "displayName": "Ninja"
     },
     {
+      "name": "conan-debug",
+      "displayName": "Debug (with Conan)",
+      "inherits": [
+        "base"
+      ],
+      "generator": "Ninja",
+      "toolchainFile": "${sourceDir}/out/deps/build/Debug/generators/conan_toolchain.cmake"
+    },
+    {
+      "name": "conan-release",
+      "displayName": "Release (with Conan)",
+      "inherits": [
+        "base"
+      ],
+      "generator": "Ninja",
+      "toolchainFile": "${sourceDir}/out/deps/build/Release/generators/conan_toolchain.cmake"
+    },
+    {
       "name": "make",
       "inherits": [
         "base"

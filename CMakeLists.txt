@@ -10,6 +10,13 @@ option(PARAKEET_CRYPTO_LOGGING_ENABLE_WARN "Enabled warning logging" ON)
 option(PARAKEET_CRYPTO_LOGGING_ENABLE_ERROR "Enabled error logging" ON)
 
 include(cmake/CPM-Loader.cmake)
+
+find_package(OpenSSL REQUIRED)
+if (WIN32)
+    # Unsure about this??
+    set(OPENSSL_USE_STATIC_LIBS TRUE)
+endif()
+
 include(cmake/git-info.cmake)
 
 CPMAddPackage(
@@ -75,7 +82,8 @@ target_include_directories(parakeet_crypto
 )
 
 target_link_libraries(parakeet_crypto
-    PRIVATE 
+    PRIVATE
+        OpenSSL::Crypto 
         cryptopp::cryptopp
         tc-tea::tc-tea
 )

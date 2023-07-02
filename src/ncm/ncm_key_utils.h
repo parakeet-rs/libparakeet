@@ -1,41 +1,46 @@
 #pragma once
 #include "ncm_rc4.h"
+
 #include "parakeet-crypto/transformer/ncm.h"
+#include "utils/pkcs7.hpp"
 
 #include <algorithm>
+#include <cstdint>
+#include <openssl/types.h>
 #include <optional>
 #include <vector>
 
-#include <cryptopp/aes.h>
-#include <cryptopp/filters.h>
-#include <cryptopp/modes.h>
+#include <openssl/evp.h>
 
 namespace parakeet_crypto::transformer
 {
 
 static constexpr size_t kNCMFinalKeyLen = 0x100;
 inline std::optional<std::array<uint8_t, kNCMFinalKeyLen>> DecryptNCMAudioKey(
-    std::vector<uint8_t> &file_key, const std::array<uint8_t, kNCMContentKeySize> &aes_key)
+    std::vector<uint8_t> &file_key, const std::array<uint8_t, kNCMContentKeySize> &aes_key_bytes)
 {
     constexpr uint8_t kFileKeyXorKey{0x64};
-    using AES = CryptoPP::ECB_Mode<CryptoPP::AES>::Decryption;
-    using Filter = CryptoPP::StreamTransformationFilter;
 
     std::vector<uint8_t> content_key;
     std::transform(file_key.cbegin(), file_key.cend(), file_key.begin(),
                    [&](auto key) { return key ^ kFileKeyXorKey; });
 
-    try
+    EVP_CIPHER_CTX *aes_ctx = EVP_CIPHER_CTX_new();
+    EVP_DecryptInit(aes_ctx, EVP_aes_128_ecb(), aes_key_bytes.data(), nullptr);
+
+    std::vector<uint8_t> buff_decrypted(file_key.size() + EVP_CIPHER_CTX_get_block_size(aes_ctx));
+
+    int plain_len = 0;
+    int outl = 0;
+    EVP_DecryptUpdate(aes_ctx, buff_decrypted.data(), &outl, file_key.data(), static_cast<int>(file_key.size()));
+    plain_len += outl;
+    EVP_DecryptFinal(aes_ctx, &buff_decrypted.at(plain_len), &outl);
+    plain_len += outl;
+    plain_len = utils::PKCS7_unpad(buff_decrypted.data(), plain_len);
+
+    if (plain_len <= 0)
     {
-        AES aes(aes_key.data(), aes_key.size());
-        Filter decryptor(aes, nullptr, Filter::PKCS_PADDING);
-        decryptor.PutMessageEnd(file_key.data(), file_key.size());
-        content_key.resize(decryptor.MaxRetrievable());
-        decryptor.Get(content_key.data(), content_key.size());
-    }
-    catch (const CryptoPP::Exception &ex)
-    {
-        return {};
+        return {}; // could not decrypt the key.
     }
 
     constexpr static std::array<const uint8_t, 17> kContentKeyPrefix{'n', 'e', 't', 'e', 'a', 's', 'e', 'c', 'l',

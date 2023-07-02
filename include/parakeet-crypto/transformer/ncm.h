@@ -8,7 +8,8 @@
 namespace parakeet_crypto::transformer
 {
 
-constexpr std::size_t kNCMContentKeySize = 128 / 8; // AES-128
+constexpr std::size_t kNCMContentKeySize = 128; // AES-128-ECB
+constexpr std::size_t kNCMContentKeySizeBytes = 128 / 8;
 std::unique_ptr<ITransformer> CreateNeteaseNCMDecryptionTransformer(const uint8_t *content_key);
 
 } // namespace parakeet_crypto::transformer

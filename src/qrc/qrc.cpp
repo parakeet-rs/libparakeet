@@ -43,15 +43,15 @@ class RawDESTransformer final : public IWriteable
 {
   private:
     static constexpr size_t kDESBlockSize = 8;
-    const qrc::QRC_DES &des1_;
-    const qrc::QRC_DES &des2_;
-    const qrc::QRC_DES &des3_;
+    qrc::QRC_DES des1_;
+    qrc::QRC_DES des2_;
+    qrc::QRC_DES des3_;
     IWriteable *dest_;
 
     BufferedTransform<kDESBlockSize> buffer_{};
 
   public:
-    RawDESTransformer(IWriteable *dest, const qrc::QRC_DES &des1, const qrc::QRC_DES &des2, const qrc::QRC_DES &des3)
+    RawDESTransformer(IWriteable *dest, qrc::QRC_DES des1, qrc::QRC_DES des2, qrc::QRC_DES des3)
         : dest_(dest), des1_(des1), des2_(des2), des3_(des3)
     {
     }

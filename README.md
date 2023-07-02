@@ -2,7 +2,14 @@
 
 使用 C++ 实现的小鹦鹉流媒体解密操作库。
 
-克隆仓库后使用 CMake 进行构建即可。
+## 构建
+
+使用 `conan` 安装预编译的依赖，然后使用 CMake 进行构建。
+
+```sh
+conan install . --output-folder=out/deps --build=missing  --settings=build_type=Release
+conan install . --output-folder=out/deps --build=missing  --settings=build_type=Debug
+```
 
 ## 用例
 
