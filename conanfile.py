@@ -15,8 +15,8 @@ class libparakeetRecipe(ConanFile):
 
     # Binary configuration
     settings = "os", "compiler", "build_type", "arch"
-    options = {"gtest": [True, False]}
-    default_options = {"gtest": False}
+    options = {"hello": [True, False]}
+    default_options = {"hello": False}
 
     # Sources are located in the same place as this recipe, copy them to the recipe
     exports_sources = "CMakeLists.txt", "src/*", "include/*"
@@ -34,6 +34,7 @@ class libparakeetRecipe(ConanFile):
         deps = CMakeDeps(self)
         deps.generate()
         tc = CMakeToolchain(self)
+        tc.user_presets_path = "out/unused.json" # don't bother
         tc.generate()
 
     def build(self):
@@ -46,9 +47,9 @@ class libparakeetRecipe(ConanFile):
         cmake.install()
 
     def requirements(self):
+        self.requires("cryptopp/8.7.0")
         self.requires("openssl/3.1.1")
-        if self.options.gtest:
-            self.requires("gtest/cci.20210126")
+        self.requires("zlib/1.2.13")
 
     def package_info(self):
         self.cpp_info.libs = ["libparakeet"]

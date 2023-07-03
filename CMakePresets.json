@@ -37,7 +37,7 @@
     },
     {
       "name": "conan-debug",
-      "displayName": "Debug (with Conan)",
+      "displayName": "Ninja Debug (with Conan)",
       "inherits": [
         "base"
       ],
@@ -46,11 +46,14 @@
     },
     {
       "name": "conan-release",
-      "displayName": "Release (with Conan)",
+      "displayName": "Ninja Release (with Conan)",
       "inherits": [
         "base"
       ],
       "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      },
       "toolchainFile": "${sourceDir}/out/deps/build/Release/generators/conan_toolchain.cmake"
     },
     {
@@ -122,6 +125,18 @@
     {
       "name": "ninja-release",
       "configurePreset": "ninja",
+      "displayName": "Release",
+      "configuration": "Release"
+    },
+    {
+      "name": "conan-debug",
+      "configurePreset": "conan-debug",
+      "displayName": "Debug",
+      "configuration": "Debug"
+    },
+    {
+      "name": "conan-release",
+      "configurePreset": "conan-release",
       "displayName": "Release",
       "configuration": "Release"
     },

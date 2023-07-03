@@ -11,6 +11,7 @@ option(PARAKEET_CRYPTO_LOGGING_ENABLE_ERROR "Enabled error logging" ON)
 
 include(cmake/CPM-Loader.cmake)
 
+find_package(cryptopp REQUIRED)
 find_package(OpenSSL REQUIRED)
 if (WIN32)
     # Unsure about this??
@@ -19,15 +20,15 @@ endif()
 
 include(cmake/git-info.cmake)
 
-CPMAddPackage(
-    NAME cryptopp-cmake
-    GITHUB_REPOSITORY abdes/cryptopp-cmake
-    GIT_TAG CRYPTOPP_8_7_0_1
-    OPTIONS
-        "CRYPTOPP_BUILD_TESTING OFF"
-        "CRYPTOPP_BUILD_DOCUMENTATION OFF"
-        # "USE_OPENMP OFF"
-)
+# CPMAddPackage(
+#     NAME cryptopp-cmake
+#     GITHUB_REPOSITORY abdes/cryptopp-cmake
+#     GIT_TAG CRYPTOPP_8_7_0_1
+#     OPTIONS
+#         "CRYPTOPP_BUILD_TESTING OFF"
+#         "CRYPTOPP_BUILD_DOCUMENTATION OFF"
+#         # "USE_OPENMP OFF"
+# )
 
 CPMAddPackage(
     NAME tc-tea
@@ -83,8 +84,8 @@ target_include_directories(parakeet_crypto
 
 target_link_libraries(parakeet_crypto
     PRIVATE
-        OpenSSL::Crypto 
-        cryptopp::cryptopp
+        openssl::openssl
+        ${cryptopp_LIBRARIES}
         tc-tea::tc-tea
 )
 
@@ -138,7 +139,8 @@ if(PARAKEET_CRYPTO_BUILD_TESTING)
             GTest::gtest
             GTest::gmock_main
             GTest::gtest_main
-            cryptopp::cryptopp
+            openssl::openssl
+            ${cryptopp_LIBRARIES}
             parakeet_crypto
     )
     set_target_properties(parakeet_crypto_test PROPERTIES

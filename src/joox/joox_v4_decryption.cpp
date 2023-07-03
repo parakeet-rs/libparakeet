@@ -2,11 +2,7 @@
 #include "parakeet-crypto/transformer/joox.h"
 #include "utils/endian_helper.h"
 #include "utils/paged_reader.h"
-
-#include <cryptopp/aes.h>
-#include <cryptopp/modes.h>
-#include <cryptopp/pwdbased.h>
-#include <cryptopp/sha.h>
+#include "utils/pkcs7.hpp"
 
 #include <openssl/evp.h>
 
@@ -25,13 +21,12 @@ namespace parakeet_crypto::transformer
 class JooxDecryptionV4Transformer final : public ITransformer
 {
   private:
-    using AES_ECB = CryptoPP::ECB_Mode<CryptoPP::AES>::Decryption;
-    static constexpr std::size_t kAESBlockSizeBits = 128; // AES-128-ECB
-    static constexpr std::size_t kAESBlockSize = kAESBlockSizeBits / 16;
-    static constexpr std::size_t kPlainBlockSize = 0x100000;                            // 1MiB
-    static constexpr std::size_t kEncryptedBlockSize = kPlainBlockSize + kAESBlockSize; // padding (0x10, ...)
+    static constexpr size_t kAESBlockSizeBits = 128; // AES-128-ECB
+    static constexpr size_t kAESBlockSize = kAESBlockSizeBits / 8;
+    static constexpr size_t kPlainBlockSize = 0x100000;                            // 1MiB
+    static constexpr size_t kEncryptedBlockSize = kPlainBlockSize + kAESBlockSize; // padding (0x10, ...)
 
-    std::array<uint8_t, CryptoPP::SHA1::DIGESTSIZE> key_{};
+    std::array<uint8_t, kAESBlockSize> key_{};
 
     inline void SetupKey(JooxConfig &config)
     {
@@ -72,41 +67,38 @@ class JooxDecryptionV4Transformer final : public ITransformer
 
         using Reader = utils::PagedReader;
 
-        AES_ECB aes{key_.data(), kAESBlockSize};
+        EVP_CIPHER_CTX *aes_ctx = EVP_CIPHER_CTX_new();
+        EVP_DecryptInit(aes_ctx, EVP_aes_128_ecb(), key_.data(), nullptr);
+
+        // disable padding, so we can avoid re-init aes-128-ecb.
+        EVP_CIPHER_CTX_set_padding(aes_ctx, 0);
+
         bool io_ok{true};
         auto decrypt_ok = Reader{input}.WithPageSize(kEncryptedBlockSize, [&](size_t, uint8_t *buffer, size_t n) {
-            if (n < kAESBlockSize || (n % kAESBlockSize != 0))
+            if (n == 0 || (n % kAESBlockSize != 0))
             {
-                return false;
+                return false; // we should have at least 1 full block, in blocks.
             }
 
-            // Decrypt content
-            aes.ProcessData(buffer, buffer, n);
+            int n_updated{};
+            if (EVP_DecryptUpdate(aes_ctx, buffer, &n_updated, buffer, static_cast<int>(n)) == 0)
+            {
+                return false; // aes decryption failed?!
+            }
 
             // Locate padding bytes
-            const auto *p_padding_block = buffer + n - kAESBlockSize;
-            uint8_t trim = p_padding_block[kAESBlockSize - 1];
-            if (trim == 0 || trim > kAESBlockSize)
+            auto n_actual = utils::PKCS7_unpad(buffer, n_updated);
+            if (n_actual <= 0)
             {
-                return false; // invalid pkcs5 padding
-            }
-
-            // Validate pkcs5 padding
-            uint8_t zero_sum = 0;
-            for (std::size_t i = kAESBlockSize - trim; i < kAESBlockSize; i++)
-            {
-                zero_sum |= p_padding_block[i] ^ trim;
-            }
-
-            if (zero_sum != 0)
-            {
-                return false; // pkcs5 padding validation failed
+                return false; // not padded correctly?
             }
 
             // Validation ok, resume.
-            io_ok = output->Write(buffer, n - size_t{trim});
+            io_ok = output->Write(buffer, n_actual);
             return io_ok;
         });
+
+        EVP_CIPHER_CTX_free(aes_ctx);
 
         return decrypt_ok ? TransformResult::OK
                : io_ok    ? TransformResult::ERROR_INVALID_KEY

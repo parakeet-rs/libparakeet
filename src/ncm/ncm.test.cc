@@ -15,8 +15,6 @@
 #include <cstdint>
 #include <vector>
 
-using ::testing::ContainerEq;
-
 using namespace parakeet_crypto;
 
 // NOLINTBEGIN(*-magic-numbers,cppcoreguidelines-avoid-non-const-global-variables,cppcoreguidelines-owning-memory)

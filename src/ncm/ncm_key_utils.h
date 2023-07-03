@@ -6,7 +6,6 @@
 
 #include <algorithm>
 #include <cstdint>
-#include <openssl/types.h>
 #include <optional>
 #include <vector>
 
@@ -21,26 +20,27 @@ inline std::optional<std::array<uint8_t, kNCMFinalKeyLen>> DecryptNCMAudioKey(
 {
     constexpr uint8_t kFileKeyXorKey{0x64};
 
-    std::vector<uint8_t> content_key;
     std::transform(file_key.cbegin(), file_key.cend(), file_key.begin(),
                    [&](auto key) { return key ^ kFileKeyXorKey; });
 
     EVP_CIPHER_CTX *aes_ctx = EVP_CIPHER_CTX_new();
     EVP_DecryptInit(aes_ctx, EVP_aes_128_ecb(), aes_key_bytes.data(), nullptr);
 
-    std::vector<uint8_t> buff_decrypted(file_key.size() + EVP_CIPHER_CTX_get_block_size(aes_ctx));
+    std::vector<uint8_t> content_key(file_key.size() + EVP_CIPHER_CTX_get_block_size(aes_ctx));
 
-    int plain_len = 0;
+    int content_key_len = 0;
     int outl = 0;
-    EVP_DecryptUpdate(aes_ctx, buff_decrypted.data(), &outl, file_key.data(), static_cast<int>(file_key.size()));
-    plain_len += outl;
-    EVP_DecryptFinal(aes_ctx, &buff_decrypted.at(plain_len), &outl);
-    plain_len += outl;
-    plain_len = utils::PKCS7_unpad(buff_decrypted.data(), plain_len);
+    int ok{1}; // NOLINT(readability-identifier-length)
+    ok &= EVP_DecryptUpdate(aes_ctx, content_key.data(), &outl, file_key.data(), static_cast<int>(file_key.size()));
+    content_key_len += outl;
+    ok &= EVP_DecryptFinal(aes_ctx, &content_key.at(content_key_len), &outl);
+    EVP_CIPHER_CTX_free(aes_ctx);
+    content_key_len += outl;
+    content_key.resize(content_key_len);
 
-    if (plain_len <= 0)
+    if (ok != 1 || content_key_len <= 0)
     {
-        return {}; // could not decrypt the key.
+        return {}; // could not decrypt the key, or padding validation had failed
     }
 
     constexpr static std::array<const uint8_t, 17> kContentKeyPrefix{'n', 'e', 't', 'e', 'a', 's', 'e', 'c', 'l',

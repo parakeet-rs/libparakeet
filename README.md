@@ -7,8 +7,9 @@
 使用 `conan` 安装预编译的依赖，然后使用 CMake 进行构建。
 
 ```sh
-conan install . --output-folder=out/deps --build=missing  --settings=build_type=Release
-conan install . --output-folder=out/deps --build=missing  --settings=build_type=Debug
+conan profile detect # if not used before
+conan install . --output-folder=out/deps --build=missing --settings=build_type=Release
+conan install . --output-folder=out/deps --build=missing --settings=build_type=Debug
 ```
 
 ## 用例

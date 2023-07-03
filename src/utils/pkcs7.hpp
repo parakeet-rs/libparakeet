@@ -14,7 +14,7 @@ template <size_t const BLOCK_SIZE = 0> inline int PKCS7_unpad(const uint8_t *dat
     }
 
     uint8_t trim = data[data_len - 1];
-    if (static_cast<size_t>(trim) > data_len)
+    if (trim == 0 || static_cast<size_t>(trim) >= data_len)
     {
         return -1; // Invalid padding length
     }
@@ -42,6 +42,11 @@ template <size_t const BLOCK_SIZE = 0> inline int PKCS7_unpad(const uint8_t *dat
     }
 
     return static_cast<int>(unpadded_len);
+}
+
+template <size_t const BLOCK_SIZE = 0, typename Container> inline int PKCS7_unpad(Container &&data)
+{
+    return PKCS7_unpad<BLOCK_SIZE>(data.data(), data.size());
 }
 
 } // namespace parakeet_crypto::utils
