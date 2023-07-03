@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <cstring>
 #include <string>
 #include <vector>
 
@@ -18,6 +19,10 @@ inline std::vector<uint8_t> Base64Encode(const std::string &data)
 }
 
 std::vector<uint8_t> Base64Decode(const uint8_t *input, size_t len);
+inline std::vector<uint8_t> Base64Decode(const char *data)
+{
+    return Base64Decode(reinterpret_cast<const uint8_t *>(data), strlen(data)); // NOLINT(*-reinterpret-cast)
+}
 inline std::vector<uint8_t> Base64Decode(const std::string &data)
 {
     return Base64Decode(reinterpret_cast<const uint8_t *>(data.data()), data.size()); // NOLINT(*-reinterpret-cast)
