@@ -1,29 +1,30 @@
 #include "utils/hex.h"
 
-#include <cryptopp/hex.h>
+#include <cstddef>
+#include <string>
+
+constexpr static const char *kHexUpper = "0123456789ABCDEF";
+constexpr static const char *kHexLower = "0123456789abcdef";
 
 namespace parakeet_crypto::utils
 {
 
-std::string Hex(const uint8_t *data, size_t len, bool upper, bool add_space)
+std::string Hex(const uint8_t *data, size_t len, bool upper)
 {
-    CryptoPP::HexEncoder encoder(nullptr, upper, add_space ? 2 : 0, add_space ? " " : "");
-    encoder.Put(data, len);
-    encoder.MessageEnd();
+    constexpr size_t kShiftUpperHalfByte = 4;
+    constexpr size_t kMaskLowerHalfByte = 0x0F;
 
-    std::string result(encoder.MaxRetrievable(), 0);
-    encoder.Get(reinterpret_cast<uint8_t *>(result.data()), result.size()); // NOLINT(*-type-reinterpret-cast)
-    return result;
-}
+    const char *hex_table = upper ? kHexUpper : kHexLower;
+    std::string result(len * 2, 0);
 
-std::vector<uint8_t> UnHex(const uint8_t *hex_str, size_t len)
-{
-    CryptoPP::HexDecoder decoder;
-    decoder.Put(hex_str, len);
-    decoder.MessageEnd();
+    size_t write_offset = 0;
+    for (size_t i = 0; i < len; i++)
+    {
+        auto value = data[i];
+        result[write_offset++] = hex_table[value >> kShiftUpperHalfByte];
+        result[write_offset++] = hex_table[value & kMaskLowerHalfByte];
+    }
 
-    std::vector<uint8_t> result(decoder.MaxRetrievable(), 0);
-    decoder.Get(result.data(), result.size());
     return result;
 }
 
